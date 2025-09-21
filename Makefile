@@ -3,8 +3,9 @@
 .PHONY: docs help test
 
 SHELL:=bash
-REGISTRY?=quay.io
-OWNER?=jupyter
+REGISTRY?=docker.io
+OWNER?=0hjohnny
+IMAGE_TAG?=latest
 
 # Enable BuildKit for Docker build
 export DOCKER_BUILDKIT:=1
@@ -36,19 +37,20 @@ help:
 
 
 # Note that `ROOT_IMAGE` and `PYTHON_VERSION` arguments are only applicable to the `docker-stacks-foundation` image
-build/%: DOCKER_BUILD_ARGS?=
-build/%: ROOT_IMAGE?=ubuntu:24.04
-build/%: PYTHON_VERSION?=3.13
+build/%: DOCKER_BUILD_ARGS?=--platform linux/amd64 --push --output type=docker,dest=./$(notdir $@)-$(IMAGE_TAG).tar
+build/%: ROOT_IMAGE?=nvcr.io/nvidia/pytorch:25.06-py3
+build/%: PYTHON_VERSION?=3.12
 build/%: ## build the latest image for a stack using the system's architecture
-	docker build $(DOCKER_BUILD_ARGS) --rm --force-rm \
-	  --tag "$(REGISTRY)/$(OWNER)/$(notdir $@)" \
+	docker buildx build $(DOCKER_BUILD_ARGS) --rm --force-rm \
+		--tag "$(REGISTRY)/$(OWNER)/$(notdir $@):$(IMAGE_TAG)" \
+        --tag "$(REGISTRY)/$(OWNER)/$(notdir $@):latest" \
 	  "./images/$(notdir $@)" \
 	  --build-arg REGISTRY="$(REGISTRY)" \
 	  --build-arg OWNER="$(OWNER)" \
 	  --build-arg ROOT_IMAGE="$(ROOT_IMAGE)" \
 	  --build-arg PYTHON_VERSION="$(PYTHON_VERSION)"
 	@echo -n "Built image size: "
-	@docker images "$(REGISTRY)/$(OWNER)/$(notdir $@):latest" --format "{{.Size}}"
+	@docker images "$(REGISTRY)/$(OWNER)/$(notdir $@):$(IMAGE_TAG)" --format "{{.Size}}"
 build-all: $(foreach I, $(ALL_IMAGES), build/$(I)) ## build all stacks
 
 

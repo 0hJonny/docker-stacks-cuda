@@ -141,7 +141,9 @@ if [ "$(id -u)" == 0 ]; then
     fi
 
     # Prepend ${CONDA_DIR}/bin to sudo secure_path
-    sed -r "s#Defaults\s+secure_path\s*=\s*\"?([^\"]+)\"?#Defaults secure_path=\"${CONDA_DIR}/bin:\1\"#" /etc/sudoers | grep secure_path > /etc/sudoers.d/path
+    # sed -r "s#Defaults\s+secure_path\s*=\s*\"?([^\"]+)\"?#Defaults secure_path=\"${CONDA_DIR}/bin:\1\"#" /etc/sudoers | grep secure_path > /etc/sudoers.d/path
+    # PATH: conda-free
+    sed -r "s#Defaults\s+secure_path\s*=\s*\"?([^\"]+)\"?#Defaults secure_path=\"/home/${NB_USER}/.venv/bin:\1\"#" /etc/sudoers | grep secure_path > /etc/sudoers.d/path
 
     # Optionally grant passwordless sudo rights for the desired user
     if [[ "${GRANT_SUDO}" == "1" || "${GRANT_SUDO}" == "yes" ]]; then
@@ -158,11 +160,18 @@ if [ "$(id -u)" == 0 ]; then
     if [ "${NB_USER}" = "root" ] && [ "${NB_UID}" = "$(id -u "${NB_USER}")" ] && [ "${NB_GID}" = "$(id -g "${NB_USER}")" ]; then
         HOME="/home/root" exec "${cmd[@]}"
     else
+        # exec sudo --preserve-env --set-home --user "${NB_USER}" \
+        #     LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" \
+        #     PATH="${PATH}" \
+        #     PYTHONPATH="${PYTHONPATH:-}" \
+        #     "${cmd[@]}"
+        # PATH: conda-free
         exec sudo --preserve-env --set-home --user "${NB_USER}" \
             LD_LIBRARY_PATH="${LD_LIBRARY_PATH}" \
-            PATH="${PATH}" \
+            PATH="/home/${NB_USER}/.venv/bin:${PATH}" \
             PYTHONPATH="${PYTHONPATH:-}" \
             "${cmd[@]}"
+
         # Notes on how we ensure that the environment that this container is started
         # with is preserved (except vars listed in JUPYTER_ENV_VARS_TO_UNSET) when
         # we transition from running as root to running as NB_USER.

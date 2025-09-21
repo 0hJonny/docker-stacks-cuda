@@ -1,7 +1,7 @@
 # Copyright (c) Jupyter Development Team.
 # Distributed under the terms of the Modified BSD License.
-ARG REGISTRY=quay.io
-ARG OWNER=jupyter
+ARG REGISTRY=hub.docker.com
+ARG OWNER=0hjohnny
 ARG BASE_IMAGE=$REGISTRY/$OWNER/base-notebook
 FROM $BASE_IMAGE
 
@@ -49,9 +49,6 @@ RUN rm -rf "/home/${NB_USER}/.cache/"
 
 # Switch back to jovyan to avoid accidental container runs as root
 USER ${NB_UID}
-
-# Add an R mimetype option to specify how the plot returns from R to the browser
-COPY --chown=${NB_UID}:${NB_GID} Rprofile.site /opt/conda/lib/R/etc/
 
 # Add setup scripts that may be used by downstream images or inherited images
 COPY setup-scripts/ /opt/setup-scripts/
